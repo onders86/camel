@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camel="http://camel.apache.org/schema/spring"
+  xmlns:context="http://www.springframework.org/schema/context" xmlns:util="http://www.springframework.org/schema/util"
+  xsi:schemaLocation="
+          http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+          http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd
+          http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd
+          http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+
+  <bean id="zipFileDataFormat" class="org.apache.camel.dataformat.zipfile.ZipFileDataFormat">
+    <property name="usingIterator" value="true" />
+  </bean>
+
+  <camelContext xmlns="http://camel.apache.org/schema/spring" streamCache="true">
+    <route>
+      <from uri="file:src/test/resources/CAMEL11120/in?noop=true&amp;delay=10000" />
+      <unmarshal ref="zipFileDataFormat" />
+      <split streaming="true">
+        <simple>${body}</simple>
+        <log loggingLevel="INFO" message="$simple{header.zipFileName}" />
+        <to uri="file:src/test/resources/CAMEL11120/out?autoCreate=true" />
+      </split>
+      <log loggingLevel="INFO" message="$simple{file:name} Succesful processed" />
+    </route>
+  </camelContext>
+</beans>
