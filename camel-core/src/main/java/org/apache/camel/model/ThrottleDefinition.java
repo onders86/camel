@@ -26,9 +26,12 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
 import org.apache.camel.Expression;
+import org.apache.camel.Predicate;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.ExpressionBuilder;
+import org.apache.camel.builder.ExpressionClause;
 import org.apache.camel.model.language.ExpressionDefinition;
+import org.apache.camel.processor.FilterProcessor;
 import org.apache.camel.processor.Throttler;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.RouteContext;
@@ -41,13 +44,14 @@ import org.apache.camel.spi.RouteContext;
 @Metadata(label = "eip,routing")
 @XmlRootElement(name = "throttle")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class ThrottleDefinition extends ExpressionNode implements ExecutorServiceAwareDefinition<ThrottleDefinition> {
-    // TODO: Camel 3.0 Should not support outputs
+public class ThrottleDefinition extends NoOutputDefinition<ThrottleDefinition> implements ExecutorServiceAwareDefinition<ThrottleDefinition> {
 
     @XmlElement(name = "correlationExpression")
     private ExpressionSubElementDefinition correlationExpression;
     @XmlTransient
     private ExecutorService executorService;
+    @XmlTransient
+    private ExpressionDefinition expression;
     @XmlAttribute
     private String executorServiceRef;
     @XmlAttribute @Metadata(defaultValue = "1000")
@@ -58,12 +62,20 @@ public class ThrottleDefinition extends ExpressionNode implements ExecutorServic
     private Boolean callerRunsWhenRejected;
     @XmlAttribute
     private Boolean rejectExecution;
-
+    
     public ThrottleDefinition() {
+    }
+    
+    public ThrottleDefinition(Predicate predicate) {
+        if (predicate != null) {
+            setExpression(ExpressionNodeHelper.toExpressionDefinition(predicate));
+        }
     }
 
     public ThrottleDefinition(Expression maximumRequestsPerPeriod) {
-        super(maximumRequestsPerPeriod);
+    	if (maximumRequestsPerPeriod != null) {
+            setExpression(ExpressionNodeHelper.toExpressionDefinition(maximumRequestsPerPeriod));
+        }
     }
 
     public ThrottleDefinition(Expression maximumRequestsPerPeriod, Expression correlationExpression) {
@@ -71,7 +83,9 @@ public class ThrottleDefinition extends ExpressionNode implements ExecutorServic
     }
 
     private ThrottleDefinition(ExpressionDefinition maximumRequestsPerPeriod, Expression correlationExpression) {
-        super(maximumRequestsPerPeriod);
+    	if (maximumRequestsPerPeriod != null) {
+            setExpression(maximumRequestsPerPeriod);
+        }
 
         ExpressionSubElementDefinition cor = new ExpressionSubElementDefinition();
         cor.setExpressionType(ExpressionNodeHelper.toExpressionDefinition(correlationExpression));
@@ -221,15 +235,6 @@ public class ThrottleDefinition extends ExpressionNode implements ExecutorServic
     // Properties
     // -------------------------------------------------------------------------
 
-    /**
-     * Expression to configure the maximum number of messages to throttle per request
-     */
-    @Override
-    public void setExpression(ExpressionDefinition expression) {
-        // override to include javadoc what the expression is used for
-        super.setExpression(expression);
-    }
-
     public Long getTimePeriodMillis() {
         return timePeriodMillis;
     }
@@ -285,8 +290,91 @@ public class ThrottleDefinition extends ExpressionNode implements ExecutorServic
     public void setCorrelationExpression(ExpressionSubElementDefinition correlationExpression) {
         this.correlationExpression = correlationExpression;
     }
+    
+    /**
+     * Expression to configure the maximum number of messages to throttle per request
+     */
+    public void setExpression(ExpressionDefinition expression) {
+    	// favour using the helper to set the expression as it can unwrap some unwanted builders when using Java DSL
+        if (expression instanceof Expression) {
+            this.expression = ExpressionNodeHelper.toExpressionDefinition((Expression) expression);
+        } else if (expression instanceof Predicate) {
+            this.expression = ExpressionNodeHelper.toExpressionDefinition((Predicate) expression);
+        } else {
+            this.expression = expression;
+        }
+    }
+    
+    public ExpressionDefinition getExpression() {
+    	return expression;
+    }
+    
+    public Expression getExpressionValue() {
+    	return expression.getExpressionValue();
+    }
 
     public ExpressionSubElementDefinition getCorrelationExpression() {
         return correlationExpression;
+    }
+	
+	/**
+     * Creates the {@link FilterProcessor} from the expression node.
+     *
+     * @param routeContext  the route context
+     * @return the created {@link FilterProcessor}
+     * @throws Exception is thrown if error creating the processor
+     */
+    protected FilterProcessor createFilterProcessor(RouteContext routeContext) throws Exception {
+        Processor childProcessor = createOutputsProcessor(routeContext);
+        return new FilterProcessor(createPredicate(routeContext), childProcessor);
+    }
+
+    /**
+     * Creates the {@link Predicate} from the expression node.
+     *
+     * @param routeContext  the route context
+     * @return the created predicate
+     */
+    protected Predicate createPredicate(RouteContext routeContext) {
+        return getExpression().createPredicate(routeContext);
+    }
+	
+	@Override
+    public void configureChild(ProcessorDefinition<?> output) {
+        // reuse the logic from pre create processor
+        preCreateProcessor();
+    }
+
+    @Override
+    protected void preCreateProcessor() {
+        Expression exp = expression;
+        if (expression != null && expression.getExpressionValue() != null) {
+            exp = expression.getExpressionValue();
+        }
+
+        if (exp instanceof ExpressionClause) {
+            ExpressionClause<?> clause = (ExpressionClause<?>) exp;
+            if (clause.getExpressionType() != null) {
+                // if using the Java DSL then the expression may have been set using the
+                // ExpressionClause which is a fancy builder to define expressions and predicates
+                // using fluent builders in the DSL. However we need afterwards a callback to
+                // reset the expression to the expression type the ExpressionClause did build for us
+                expression = clause.getExpressionType();
+            }
+        }
+
+        if (expression != null && expression.getExpression() == null) {
+            // use toString from predicate or expression so we have some information to show in the route model
+            if (expression.getPredicate() != null) {
+                expression.setExpression(expression.getPredicate().toString());
+            } else if (expression.getExpressionValue() != null) {
+                expression.setExpression(expression.getExpressionValue().toString());
+            }
+        }
+    }
+    
+    @Override
+    public void setKeyedExpression(ExpressionDefinition keyExpression) {
+        setExpression(keyExpression);
     }
 }

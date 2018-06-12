@@ -26,6 +26,7 @@ import org.apache.camel.Expression;
 import org.apache.camel.Message;
 import org.apache.camel.builder.xml.Namespaces;
 import org.apache.camel.model.ExpressionNode;
+import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.model.language.ExpressionDefinition;
 import org.apache.camel.support.ExpressionAdapter;
 
@@ -45,6 +46,12 @@ public class ExpressionClause<T> extends ExpressionDefinition {
     public static <T extends ExpressionNode> ExpressionClause<T> createAndSetExpression(T result) {
         ExpressionClause<T> clause = new ExpressionClause<>(result);
         result.setExpression(clause);
+        return clause;
+    }
+    
+    public static <T extends ProcessorDefinition<T>> ExpressionClause<T> createAndSetExpression(T result) {
+        ExpressionClause<T> clause = new ExpressionClause<>(result);
+        result.setKeyedExpression(clause);
         return clause;
     }
 

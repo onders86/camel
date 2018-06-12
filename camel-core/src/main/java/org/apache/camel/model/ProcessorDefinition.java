@@ -590,6 +590,15 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
     public void configureChild(ProcessorDefinition<?> output) {
         // noop
     }
+    
+    /**
+     * Strategy for children to act like expression node with custom keyed expression
+     *
+     * @param output the child to be added as output to this
+     */
+    public void setKeyedExpression(ExpressionDefinition keyExpression) {
+        // noop
+    }
 
     // Fluent API
     // -------------------------------------------------------------------------
