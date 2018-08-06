@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.camel.AsyncCallback;
@@ -42,7 +41,6 @@ import org.apache.camel.spi.RouteContext;
 import org.apache.camel.util.ExchangeHelper;
 import org.apache.camel.util.IOHelper;
 import org.apache.camel.util.ObjectHelper;
-
 import static org.apache.camel.util.ObjectHelper.notNull;
 
 /**
@@ -230,18 +228,7 @@ public class Splitter extends MulticastProcessor implements AsyncProcessor, Trac
 
         @Override
         public void close() throws IOException {
-            if (value instanceof Scanner) {
-                // special for Scanner which implement the Closeable since JDK7 
-                Scanner scanner = (Scanner) value;
-                scanner.close();
-                IOException ioException = scanner.ioException();
-                if (ioException != null) {
-                    throw ioException;
-                }
-            } else if (value instanceof Closeable) {
-                // we should throw out the exception here   
-                IOHelper.closeWithException((Closeable) value);
-            }
+            IOHelper.closeIterator(value);
         }
        
     }

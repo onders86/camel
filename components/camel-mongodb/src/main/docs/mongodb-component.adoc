@@ -1,7 +1,10 @@
 [[mongodb-component]]
-== MongoDB Component
+== MongoDB Component (deprecated)
 
 *Available as of Camel version 2.10*
+
+*Available as of Camel version 2.10*
+
 
 According to Wikipedia: "NoSQL is a movement promoting a loosely defined
 class of non-relational data stores that break with a long history of
@@ -110,6 +113,22 @@ with the following path and query parameters:
 | *tailTrackingStrategy* (tail) | Sets the strategy used to extract the increasing field value and to create the query to position the tail cursor. | LITERAL | MongoDBTailTracking Enum
 |===
 // endpoint options: END
+// spring-boot-auto-configure options: START
+=== Spring Boot Auto-Configuration
+
+
+The component supports 2 options, which are listed below.
+
+
+
+[width="100%",cols="2,5,^1,2",options="header"]
+|===
+| Name | Description | Default | Type
+| *camel.component.mongodb.enabled* | Enable mongodb component | true | Boolean
+| *camel.component.mongodb.resolve-property-placeholders* | Whether the component should resolve property placeholders on itself when starting. Only properties which are of String type can use property placeholders. | true | Boolean
+|===
+// spring-boot-auto-configure options: END
+
 
 
 

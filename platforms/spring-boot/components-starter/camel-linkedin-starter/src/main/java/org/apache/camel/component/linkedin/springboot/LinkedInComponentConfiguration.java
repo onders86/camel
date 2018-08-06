@@ -37,6 +37,11 @@ public class LinkedInComponentConfiguration
             ComponentConfigurationPropertiesCommon {
 
     /**
+     * Whether to enable auto configuration of the linkedin component. This is
+     * enabled by default.
+     */
+    private Boolean enabled;
+    /**
      * To use the shared configuration
      */
     private LinkedInConfigurationNestedConfiguration configuration;
@@ -101,7 +106,7 @@ public class LinkedInComponentConfiguration
         private String clientSecret;
         /**
          * List of LinkedIn scopes as specified at
-         * https://developer.linkedin.com/documents/authentication#granting
+         * https://developer.linkedin.com/documents/authenticationgranting
          */
         private OAuthScope[] scopes;
         /**

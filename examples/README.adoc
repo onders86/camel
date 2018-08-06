@@ -11,11 +11,13 @@ View the individual example READMEs for details.
 ### Examples
 
 // examples: START
-Number of Examples: 105 (8 deprecated)
+Number of Examples: 107 (8 deprecated)
 
 [width="100%",cols="4,2,4",options="header"]
 |===
 | Example | Category | Description
+
+| link:camel-example-fhir/README.md[FHIR] (camel-example-fhir) |  | An example running Camel FHIR using Camel CDI 
 
 | link:camel-example-micrometer/README.md[Micrometer] (camel-example-micrometer) | Advanced | An example showing how to work with Camel, Spring Java Config and Micrometer monitoring
 
@@ -26,6 +28,8 @@ Number of Examples: 105 (8 deprecated)
 | link:camel-example-cdi-xml/README.md[CDI Camel XML] (camel-example-cdi-xml) | Beginner | CDI and Camel XML example
 
 | link:camel-example-console/README.md[Console] (camel-example-console) | Beginner | An example that reads input from the console
+
+| link:camel-example-fhir-spring-boot/readme.adoc[Fhir Spring Boot] (camel-example-fhir-spring-boot) | Beginner | An example showing how to work with Camel, Fhir and Spring Boot
 
 | link:camel-example-ftp/README.md[FTP] (camel-example-ftp) | Beginner | An example for showing Camel FTP integration
 
@@ -167,6 +171,8 @@ Number of Examples: 105 (8 deprecated)
 
 | link:camel-example-cxf-blueprint/README.md[CXF Blueprint] (camel-example-cxf-blueprint) | OSGi | An example which use a CXF consumer and the OSGI HTTP Service
 
+| link:camel-example-fhir-osgi/README.md[Fhir Osgi] (camel-example-fhir-osgi) | OSGi | An example running Camel FHIR in Apache Karaf
+
 | link:camel-example-netty-http/README.md[Netty HTTP] (camel-example-netty-http) | OSGi | An example showing how to use a shared Netty HTTP server with multiple Camel applications in OSGi container
 
 | link:camel-example-olingo4-blueprint/README.md[Olingo4 Blueprint] (camel-example-olingo4-blueprint) | OSGi | An example which use the Olingo4 component in Blueprint
@@ -181,8 +187,6 @@ Number of Examples: 105 (8 deprecated)
   
 
 | link:camel-example-swagger-osgi/README.md[Swagger OSGi] (camel-example-swagger-osgi) | OSGi | An example using REST DSL in XML and Swagger API
-
-| link:camel-example-ceylon/ReadMe.md[Ceylon] (camel-example-ceylon) | Other Languages | A Camel route using Ceylon
 
 | link:camel-example-groovy/ReadMe.md[Groovy] (camel-example-groovy) | Other Languages | *deprecated* A Camel route using Groovy DSL
 

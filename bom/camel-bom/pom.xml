@@ -78,6 +78,11 @@
       </dependency>
       <dependency>
         <groupId>org.apache.camel</groupId>
+        <artifactId>camel-as2</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.camel</groupId>
         <artifactId>camel-asn1</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -766,6 +771,11 @@
       <dependency>
         <groupId>org.apache.camel</groupId>
         <artifactId>camel-fhir</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-fhir-api</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

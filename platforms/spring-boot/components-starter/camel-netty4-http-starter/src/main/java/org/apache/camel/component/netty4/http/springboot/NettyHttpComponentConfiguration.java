@@ -17,15 +17,11 @@
 package org.apache.camel.component.netty4.http.springboot;
 
 import javax.annotation.Generated;
-import io.netty.util.concurrent.EventExecutorGroup;
 import org.apache.camel.LoggingLevel;
-import org.apache.camel.component.netty4.http.NettyHttpBinding;
 import org.apache.camel.component.netty4.http.SecurityAuthenticator;
 import org.apache.camel.component.netty4.http.SecurityConstraint;
-import org.apache.camel.spi.HeaderFilterStrategy;
 import org.apache.camel.spring.boot.ComponentConfigurationPropertiesCommon;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
  * Netty HTTP server and client using the Netty 4.x library.
@@ -39,21 +35,25 @@ public class NettyHttpComponentConfiguration
             ComponentConfigurationPropertiesCommon {
 
     /**
-     * To use a custom org.apache.camel.component.netty4.http.NettyHttpBinding
-     * for binding to/from Netty and Camel Message API.
+     * Whether to enable auto configuration of the netty4-http component. This
+     * is enabled by default.
      */
-    @NestedConfigurationProperty
-    private NettyHttpBinding nettyHttpBinding;
+    private Boolean enabled;
+    /**
+     * To use a custom org.apache.camel.component.netty4.http.NettyHttpBinding
+     * for binding to/from Netty and Camel Message API. The option is a
+     * org.apache.camel.component.netty4.http.NettyHttpBinding type.
+     */
+    private String nettyHttpBinding;
     /**
      * To use the NettyConfiguration as configuration when creating endpoints.
      */
     private NettyHttpConfigurationNestedConfiguration configuration;
     /**
      * To use a custom org.apache.camel.spi.HeaderFilterStrategy to filter
-     * headers.
+     * headers. The option is a org.apache.camel.spi.HeaderFilterStrategy type.
      */
-    @NestedConfigurationProperty
-    private HeaderFilterStrategy headerFilterStrategy;
+    private String headerFilterStrategy;
     /**
      * Refers to a
      * org.apache.camel.component.netty4.http.NettyHttpSecurityConfiguration for
@@ -70,10 +70,10 @@ public class NettyHttpComponentConfiguration
      */
     private Integer maximumPoolSize = 16;
     /**
-     * To use the given EventExecutorGroup.
+     * To use the given EventExecutorGroup. The option is a
+     * io.netty.util.concurrent.EventExecutorGroup type.
      */
-    @NestedConfigurationProperty
-    private EventExecutorGroup executorService;
+    private String executorService;
     /**
      * Whether the component should resolve property placeholders on itself when
      * starting. Only properties which are of String type can use property
@@ -81,11 +81,11 @@ public class NettyHttpComponentConfiguration
      */
     private Boolean resolvePropertyPlaceholders = true;
 
-    public NettyHttpBinding getNettyHttpBinding() {
+    public String getNettyHttpBinding() {
         return nettyHttpBinding;
     }
 
-    public void setNettyHttpBinding(NettyHttpBinding nettyHttpBinding) {
+    public void setNettyHttpBinding(String nettyHttpBinding) {
         this.nettyHttpBinding = nettyHttpBinding;
     }
 
@@ -98,12 +98,11 @@ public class NettyHttpComponentConfiguration
         this.configuration = configuration;
     }
 
-    public HeaderFilterStrategy getHeaderFilterStrategy() {
+    public String getHeaderFilterStrategy() {
         return headerFilterStrategy;
     }
 
-    public void setHeaderFilterStrategy(
-            HeaderFilterStrategy headerFilterStrategy) {
+    public void setHeaderFilterStrategy(String headerFilterStrategy) {
         this.headerFilterStrategy = headerFilterStrategy;
     }
 
@@ -133,11 +132,11 @@ public class NettyHttpComponentConfiguration
         this.maximumPoolSize = maximumPoolSize;
     }
 
-    public EventExecutorGroup getExecutorService() {
+    public String getExecutorService() {
         return executorService;
     }
 
-    public void setExecutorService(EventExecutorGroup executorService) {
+    public void setExecutorService(String executorService) {
         this.executorService = executorService;
     }
 
@@ -182,11 +181,10 @@ public class NettyHttpComponentConfiguration
          * as a application/x-java-serialized-object content type. On the
          * producer side the exception will be deserialized and thrown as is,
          * instead of the HttpOperationFailedException. The caused exception is
-         * required to be serialized.
-         * <p/>
-         * This is by default turned off. If you enable this then be aware that
-         * Java will deserialize the incoming data from the request to Java and
-         * that can be a potential security risk.
+         * required to be serialized. This is by default turned off. If you
+         * enable this then be aware that Java will deserialize the incoming
+         * data from the request to Java and that can be a potential security
+         * risk.
          */
         private Boolean transferException = false;
         /**
@@ -230,8 +228,8 @@ public class NettyHttpComponentConfiguration
         private String path;
         /**
          * Determines whether or not the raw input stream from Netty
-         * HttpRequest#getContent() or HttpResponset#getContent() is cached or
-         * not (Camel will read the stream into a in light-weight memory based
+         * HttpRequestgetContent() or HttpResponsetgetContent() is cached or not
+         * (Camel will read the stream into a in light-weight memory based
          * Stream caching) cache. By default Camel will cache the Netty input
          * stream to support reading it multiple times to ensure it Camel can
          * retrieve all data from the stream. However you can set this option to
@@ -243,8 +241,8 @@ public class NettyHttpComponentConfiguration
          * the Netty stream when the Netty HTTP server/HTTP client is done
          * processing, which means that if the asynchronous routing engine is in
          * use then any asynchronous thread that may continue routing the
-         * {@link org.apache.camel.Exchange} may not be able to read the Netty
-         * stream, because Netty has closed it.
+         * org.apache.camel.Exchange may not be able to read the Netty stream,
+         * because Netty has closed it.
          */
         private Boolean disableStreamCache = false;
         /**
@@ -261,17 +259,15 @@ public class NettyHttpComponentConfiguration
         /**
          * The maximum length of all headers. If the sum of the length of each
          * header exceeds this value, a
-         * {@link io.netty.handler.codec.TooLongFrameException} will be raised.
+         * io.netty.handler.codec.TooLongFrameException will be raised.
          */
         private Integer maxHeaderSize = 8192;
         private Boolean allowDefaultCodec;
         /**
          * The status codes which are considered a success response. The values
          * are inclusive. Multiple ranges can be defined, separated by comma,
-         * e.g. <tt>200-204,209,301-304</tt>. Each range must be a single number
-         * or from-to with the dash included.
-         * <p/>
-         * The default range is <tt>200-299</tt>
+         * e.g. 200-204,209,301-304. Each range must be a single number or
+         * from-to with the dash included. The default range is 200-299
          */
         private String okStatusCodeRange = "200-299";
         /**

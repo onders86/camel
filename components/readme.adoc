@@ -2,7 +2,7 @@ Components
 ^^^^^^^^^^
 
 // components: START
-Number of Components: 297 in 203 JAR artifacts (20 deprecated)
+Number of Components: 301 in 204 JAR artifacts (21 deprecated)
 
 [width="100%",cols="4,1,5",options="header"]
 |===
@@ -73,6 +73,9 @@ Number of Components: 297 in 203 JAR artifacts (20 deprecated)
 
 | link:camel-aws/src/main/docs/aws-ec2-component.adoc[AWS EC2] (camel-aws) +
 `aws-ec2:label` | 2.16 | The aws-ec2 is used for managing Amazon EC2 instances.
+
+| link:camel-aws/src/main/docs/aws-iam-component.adoc[AWS IAM] (camel-aws) +
+`aws-iam:label` | 2.23 | The aws-iam is used for managing Amazon IAM
 
 | link:camel-aws/src/main/docs/aws-kinesis-component.adoc[AWS Kinesis] (camel-aws) +
 `aws-kinesis:streamName` | 2.17 | The aws-kinesis component is for consuming and producing records from Amazon Kinesis Streams.
@@ -256,6 +259,9 @@ Number of Components: 297 in 203 JAR artifacts (20 deprecated)
 
 | link:camel-facebook/src/main/docs/facebook-component.adoc[Facebook] (camel-facebook) +
 `facebook:methodName` | 2.14 | The Facebook component provides access to all of the Facebook APIs accessible using Facebook4J.
+
+| link:camel-fhir/src/main/docs/fhir-component.adoc[FHIR] (camel-fhir) +
+`fhir:apiName/methodName` | 2.23 | The fhir component is used for working with the FHIR protocol (health care).
 
 | link:../camel-core/src/main/docs/file-component.adoc[File] (camel-core) +
 `file:directoryName` | 1.0 | The file component is used for reading or writing files.
@@ -479,6 +485,12 @@ Number of Components: 297 in 203 JAR artifacts (20 deprecated)
 | link:camel-kubernetes/src/main/docs/kubernetes-deployments-component.adoc[Kubernetes Deployments] (camel-kubernetes) +
 `kubernetes-deployments:masterUrl` | 2.20 | The Kubernetes Nodes component provides a producer to execute kubernetes node operations and a consumer to consume node events.
 
+| link:camel-kubernetes/src/main/docs/kubernetes-hpa-component.adoc[Kubernetes HPA] (camel-kubernetes) +
+`kubernetes-hpa:masterUrl` | 2.23 | The Kubernetes HPA component provides a producer to execute kubernetes hpa operations and a consumer to consume HPA events.
+
+| link:camel-kubernetes/src/main/docs/kubernetes-job-component.adoc[Kubernetes Job] (camel-kubernetes) +
+`kubernetes-job:masterUrl` | 2.23 | The Kubernetes Jobs component provides a producer to execute kubernetes job operations
+
 | link:camel-kubernetes/src/main/docs/kubernetes-namespaces-component.adoc[Kubernetes Namespaces] (camel-kubernetes) +
 `kubernetes-namespaces:masterUrl` | 2.17 | The Kubernetes Namespaces component provides a producer to execute kubernetes namespace operations and a consumer to consume namespace events.
 
@@ -540,7 +552,7 @@ Number of Components: 297 in 203 JAR artifacts (20 deprecated)
 `metrics:metricsType:metricsName` | 2.14 | To collect various metrics directly from Camel routes using the DropWizard metrics library.
 
 | link:camel-micrometer/src/main/docs/micrometer-component.adoc[Micrometer] (camel-micrometer) +
-`micrometer:metricsType:meterName` | 2.22 | To collect various metrics directly from Camel routes using the Micrometer library.
+`micrometer:metricsType:metricsName` | 2.22 | To collect various metrics directly from Camel routes using the Micrometer library.
 
 | link:camel-mina/src/main/docs/mina-component.adoc[Mina] (camel-mina) +
 `mina:protocol:host:port` | 1.0 | *deprecated* Socket level networking using TCP or UDP with the Apache Mina 1.x library.
@@ -555,7 +567,7 @@ Number of Components: 297 in 203 JAR artifacts (20 deprecated)
 `mock:name` | 1.0 | The mock component is used for testing routes and mediation rules using mocks.
 
 | link:camel-mongodb/src/main/docs/mongodb-component.adoc[MongoDB] (camel-mongodb) +
-`mongodb:connectionBean` | 2.10 | Component for working with documents stored in MongoDB database.
+`mongodb:connectionBean` | 2.10 | *deprecated* Component for working with documents stored in MongoDB database.
 
 | link:camel-mongodb3/src/main/docs/mongodb3-component.adoc[MongoDB] (camel-mongodb3) +
 `mongodb3:connectionBean` | 2.19 | Component for working with documents stored in MongoDB database.
@@ -907,7 +919,7 @@ Data Formats
 ^^^^^^^^^^^^
 
 // dataformats: START
-Number of Data Formats: 50 in 40 JAR artifacts (4 deprecated)
+Number of Data Formats: 48 in 39 JAR artifacts (4 deprecated)
 
 [width="100%",cols="4,1,5",options="header"]
 |===
@@ -936,10 +948,6 @@ Number of Data Formats: 50 in 40 JAR artifacts (4 deprecated)
 | link:camel-crypto/src/main/docs/crypto-dataformat.adoc[Crypto (Java Cryptographic Extension)] (camel-crypto) | 2.3 | Crypto data format is used for encrypting and decrypting of messages using Java Cryptographic Extension.
 
 | link:camel-csv/src/main/docs/csv-dataformat.adoc[CSV] (camel-csv) | 1.3 | The CSV data format is used for handling CSV payloads.
-
-| link:camel-fhir/src/main/docs/fhirJson-dataformat.adoc[FHIR JSon] (camel-fhir) | 2.21 | The FHIR JSon data format is used to marshall/unmarshall to/from FHIR objects to/from JSON.
-
-| link:camel-fhir/src/main/docs/fhirXml-dataformat.adoc[FHIR XML] (camel-fhir) | 2.21 | The FHIR XML data format is used to marshall/unmarshall from/to FHIR objects to/from XML.
 
 | link:camel-flatpack/src/main/docs/flatpack-dataformat.adoc[Flatpack] (camel-flatpack) | 2.1 | The Flatpack data format is used for working with flat payloads (such as CSV, delimited, or fixed length formats).
 
@@ -1165,7 +1173,7 @@ Number of Miscellaneous Components: 44 in 44 JAR artifacts (13 deprecated)
 
 | link:camel-testcontainers/src/main/docs/testcontainers.adoc[Testcontainers] (camel-testcontainers) | 2.22 | Camel support for testcontainers
 
-| link:camel-testcontainers-spring/src/main/docs/testcontainers-spring.adoc[Testcontainers Spring] (camel-testcontainers-spring) | 2.22 | Camel unit testing with Spring and  testcontainers
+| link:camel-testcontainers-spring/src/main/docs/testcontainers-spring.adoc[Testcontainers Spring] (camel-testcontainers-spring) | 2.22 | Camel unit testing with Spring and testcontainers
 
 | link:camel-testng/src/main/docs/testng.adoc[TestNG] (camel-testng) | 2.8 | *deprecated* Camel unit testing with TestNG
 

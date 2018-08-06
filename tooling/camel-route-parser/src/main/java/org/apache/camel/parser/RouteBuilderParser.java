@@ -19,6 +19,7 @@ package org.apache.camel.parser;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -161,9 +162,19 @@ public final class RouteBuilderParser {
                 // find position of field/expression
                 if (internal instanceof ASTNode) {
                     int pos = ((ASTNode) internal).getStartPosition();
-                    int line = findLineNumber(fullyQualifiedFileName, pos);
+                    int len = ((ASTNode) internal).getLength();
+                    int line = findLineNumber(clazz.toUnformattedString(), pos);
                     if (line > -1) {
                         detail.setLineNumber("" + line);
+                    }
+                    int endLine = findLineNumber(clazz.toUnformattedString(), pos + len);
+                    if (endLine > -1) {
+                        detail.setLineNumberEnd("" + endLine);
+                    }
+                    detail.setAbsolutePosition(pos);
+                    int linePos = findLinePosition(clazz.toUnformattedString(), pos);
+                    if (linePos > -1) {
+                        detail.setLinePosition(linePos);
                     }
                 }
                 // we do not know if this field is used as consumer or producer only, but we try
@@ -212,9 +223,18 @@ public final class RouteBuilderParser {
                         detail.setMethodName(configureMethod.getName());
                         detail.setEndpointInstance(null);
                         detail.setEndpointUri(result.getElement());
-                        int line = findLineNumber(fullyQualifiedFileName, result.getPosition());
+                        int line = findLineNumber(clazz.toUnformattedString(), result.getPosition());
                         if (line > -1) {
                             detail.setLineNumber("" + line);
+                        }
+                        int lineEnd = findLineNumber(clazz.toUnformattedString(), result.getPosition() + result.getLength());
+                        if (lineEnd > -1) {
+                            detail.setLineNumberEnd("" + lineEnd);
+                        }
+                        detail.setAbsolutePosition(result.getPosition());
+                        int linePos = findLinePosition(clazz.toUnformattedString(), result.getPosition());
+                        if (linePos > -1) {
+                            detail.setLinePosition(linePos);
                         }
                         detail.setEndpointComponentName(endpointComponentName(result.getElement()));
                         detail.setConsumerOnly(true);
@@ -255,9 +275,18 @@ public final class RouteBuilderParser {
                     detail.setMethodName(configureMethod.getName());
                     detail.setEndpointInstance(null);
                     detail.setEndpointUri(result.getElement());
-                    int line = findLineNumber(fullyQualifiedFileName, result.getPosition());
+                    int line = findLineNumber(clazz.toUnformattedString(), result.getPosition());
                     if (line > -1) {
                         detail.setLineNumber("" + line);
+                    }
+                    int endLine = findLineNumber(clazz.toUnformattedString(), result.getPosition() + result.getLength());
+                    if (endLine > -1) {
+                        detail.setLineNumberEnd("" + endLine);
+                    }
+                    detail.setAbsolutePosition(result.getPosition());
+                    int linePos = findLinePosition(clazz.toUnformattedString(), result.getPosition());
+                    if (linePos > -1) {
+                        detail.setLinePosition(linePos);
                     }
                     detail.setEndpointComponentName(endpointComponentName(result.getElement()));
                     detail.setConsumerOnly(false);
@@ -293,9 +322,18 @@ public final class RouteBuilderParser {
                     detail.setFileName(fileName);
                     detail.setClassName(clazz.getQualifiedName());
                     detail.setMethodName("configure");
-                    int line = findLineNumber(fullyQualifiedFileName, result.getPosition());
+                    int line = findLineNumber(clazz.toUnformattedString(), result.getPosition());
                     if (line > -1) {
                         detail.setLineNumber("" + line);
+                    }
+                    int endLine = findLineNumber(clazz.toUnformattedString(), result.getPosition() + result.getLength());
+                    if (endLine > -1) {
+                        detail.setLineNumberEnd("" + endLine);
+                    }
+                    detail.setAbsolutePosition(result.getPosition());
+                    int linePos = findLinePosition(clazz.toUnformattedString(), result.getPosition());
+                    if (linePos > -1) {
+                        detail.setLinePosition(linePos);
                     }
                     detail.setSimple(result.getElement());
 
@@ -336,9 +374,13 @@ public final class RouteBuilderParser {
                     detail.setFileName(fileName);
                     detail.setClassName(clazz.getQualifiedName());
                     detail.setMethodName("configure");
-                    int line = findLineNumber(fullyQualifiedFileName, result.getPosition());
+                    int line = findLineNumber(clazz.toUnformattedString(), result.getPosition());
                     if (line > -1) {
                         detail.setLineNumber("" + line);
+                    }
+                    int endLine = findLineNumber(clazz.toUnformattedString(), result.getPosition() + result.getLength());
+                    if (endLine > -1) {
+                        detail.setLineNumberEnd("" + endLine);
                     }
                     detail.setRouteId(result.getElement());
 
@@ -357,18 +399,45 @@ public final class RouteBuilderParser {
         return null;
     }
 
-    private static int findLineNumber(String fullyQualifiedFileName, int position) {
+    private static int findLineNumber(String content, int position) {
         int lines = 0;
 
         try {
             int current = 0;
-            try (BufferedReader br = new BufferedReader(new FileReader(new File(fullyQualifiedFileName)))) {
+            try (BufferedReader br = new BufferedReader(new StringReader(content))) {
                 String line;
                 while ((line = br.readLine()) != null) {
                     lines++;
                     current += line.length() + 1; // add 1 for line feed
                     if (current >= position) {
                         return lines;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // ignore
+            return -1;
+        }
+
+        return lines;
+    }
+
+    private static int findLinePosition(String content, int position) {
+        int lines = 0;
+
+        try {
+            int current = 0;
+            try (BufferedReader br = new BufferedReader(new StringReader(content))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    lines++;
+                    current += line.length() + 1; // add 1 for line feed
+                    if (current >= position) {
+                        int prev = current - (line.length() + 1);
+                        // find relative position now
+                        int rel = position - prev;
+                        // add +1
+                        return rel + 1;
                     }
                 }
             }

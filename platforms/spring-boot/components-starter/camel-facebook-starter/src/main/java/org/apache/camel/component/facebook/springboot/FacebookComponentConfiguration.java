@@ -33,6 +33,11 @@ public class FacebookComponentConfiguration
             ComponentConfigurationPropertiesCommon {
 
     /**
+     * Whether to enable auto configuration of the facebook component. This is
+     * enabled by default.
+     */
+    private Boolean enabled;
+    /**
      * To use the shared configuration
      */
     private FacebookConfigurationNestedConfiguration configuration;
@@ -153,7 +158,7 @@ public class FacebookComponentConfiguration
         private Boolean mbeanEnabled = false;
         /**
          * Default OAuth permissions. Comma separated permission names. See
-         * https://developers.facebook.com/docs/reference/login/#permissions for
+         * https://developers.facebook.com/docs/reference/login/permissions for
          * the detail
          */
         private String oAuthPermissions;
