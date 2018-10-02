@@ -573,6 +573,12 @@ public class SftpOperations implements RemoteFileOperations<SftpRemoteFile> {
     }
 
     public synchronized void changeCurrentDirectory(String path) throws GenericFileOperationFailedException {
+        if (FileUtil.isWindows()) {
+            if (!path.startsWith("/")) {
+            	path = "/" + path;
+            }
+        }
+
         LOG.trace("changeCurrentDirectory({})", path);
         if (ObjectHelper.isEmpty(path)) {
             return;
