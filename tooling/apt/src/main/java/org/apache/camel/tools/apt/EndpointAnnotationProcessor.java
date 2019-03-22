@@ -418,12 +418,22 @@ public class EndpointAnnotationProcessor extends AbstractCamelAnnotationProcesso
         model.setLenientProperties(uriEndpoint.lenientProperties());
         model.setAsync(implementsInterface(processingEnv, roundEnv, endpointClassElement, "org.apache.camel.AsyncEndpoint"));
 
+        String deprecationNote = null;
         // what is the first version this component was added to Apache Camel
         String firstVersion = uriEndpoint.firstVersion();
-        if (Strings.isNullOrEmpty(firstVersion) && endpointClassElement.getAnnotation(Metadata.class) != null) {
-            // fallback to @Metadata if not from @UriEndpoint
-            firstVersion = endpointClassElement.getAnnotation(Metadata.class).firstVersion();
+        Metadata[] metadataArray = endpointClassElement.getAnnotationsByType(Metadata.class);
+        for(Metadata metadata : metadataArray) {
+            if (Strings.isNullOrEmpty(firstVersion)) {
+                // fallback to @Metadata if not from @UriEndpoint
+                if (metadata.firstVersion() != null) {
+                    firstVersion = metadata.firstVersion();
+                }
+                if (metadata.deprecationNote() != null) {
+                    deprecationNote = metadata.deprecationNote();
+                }
+            }
         }
+
         if (!Strings.isNullOrEmpty(firstVersion)) {
             model.setFirstVersion(firstVersion);
         }
@@ -446,7 +456,7 @@ public class EndpointAnnotationProcessor extends AbstractCamelAnnotationProcesso
         // we can mark a component as deprecated by using the annotation
         boolean deprecated = endpointClassElement.getAnnotation(Deprecated.class) != null;
         model.setDeprecated(deprecated);
-        String deprecationNote = null;
+
         if (endpointClassElement.getAnnotation(Metadata.class) != null) {
             deprecationNote = endpointClassElement.getAnnotation(Metadata.class).deprecationNote();
         }
@@ -484,19 +494,25 @@ public class EndpointAnnotationProcessor extends AbstractCamelAnnotationProcesso
                                                 Map<String, Object> parentData) {
         Elements elementUtils = processingEnv.getElementUtils();
         while (true) {
-            Metadata componentAnnotation = classElement.getAnnotation(Metadata.class);
-            if (componentAnnotation != null && Objects.equals("verifiers", componentAnnotation.label())) {
-                componentModel.setVerifiers(componentAnnotation.enums());
+            Metadata[] componentAnnotationArray = classElement.getAnnotationsByType(Metadata.class);
+            for(Metadata componentAnnotation : componentAnnotationArray) {
+                if (componentAnnotation != null && Objects.equals("verifiers", componentAnnotation.label())) {
+                	if (componentAnnotation.enums() != null) {
+                    	componentModel.setVerifiers(componentAnnotation.enums());
+                    }
+                }
             }
 
             List<ExecutableElement> methods = ElementFilter.methodsIn(classElement.getEnclosedElements());
             for (ExecutableElement method : methods) {
                 String methodName = method.getSimpleName().toString();
                 boolean deprecated = method.getAnnotation(Deprecated.class) != null;
-                Metadata metadata = method.getAnnotation(Metadata.class);
                 String deprecationNote = null;
-                if (metadata != null) {
-                    deprecationNote = metadata.deprecationNote();
+                Metadata[] metadataArray = method.getAnnotationsByType(Metadata.class);
+                for(Metadata metadata : metadataArray) {
+                	if (metadata.deprecationNote() != null) {
+                    	deprecationNote = metadata.deprecationNote();
+                    }
                 }
 
                 // must be the setter
@@ -521,71 +537,84 @@ public class EndpointAnnotationProcessor extends AbstractCamelAnnotationProcesso
 
                 // we usually favor putting the @Metadata annotation on the field instead of the setter, so try to use it if its there
                 VariableElement field = findFieldElement(classElement, fieldName);
-                if (field != null && metadata == null) {
-                    metadata = field.getAnnotation(Metadata.class);
+                if (field != null && metadataArray.length == 0) {
+                	metadataArray = field.getAnnotationsByType(Metadata.class);
                 }
-
-                boolean required = metadata != null && metadata.required();
-                String label = metadata != null ? metadata.label() : null;
-                boolean secret = metadata != null && metadata.secret();
-                String displayName = metadata != null ? metadata.displayName() : null;
-
-                // we do not yet have default values / notes / as no annotation support yet
-                // String defaultValueNote = param.defaultValueNote();
-                String defaultValue = metadata != null ? metadata.defaultValue() : null;
-                String defaultValueNote = null;
-
+                
                 ExecutableElement setter = method;
                 String name = fieldName;
                 name = prefix + name;
                 TypeMirror fieldType = setter.getParameters().get(0).asType();
                 String fieldTypeName = fieldType.toString();
                 TypeElement fieldTypeElement = findTypeElement(processingEnv, roundEnv, fieldTypeName);
-
+                
                 String docComment = findJavaDoc(elementUtils, method, fieldName, name, classElement, false);
-                if (isNullOrEmpty(docComment)) {
-                    docComment = metadata != null ? metadata.description() : null;
-                }
-                if (isNullOrEmpty(docComment)) {
-                    // apt cannot grab javadoc from camel-core, only from annotations
-                    if ("setHeaderFilterStrategy".equals(methodName)) {
-                        docComment = HEADER_FILTER_STRATEGY_JAVADOC;
-                    } else {
-                        docComment = "";
-                    }
-                }
 
+                // we do not yet have default values / notes / as no annotation support yet
+                // String defaultValueNote = param.defaultValueNote();
+                boolean required = false;
+                String label = null, displayName = null, defaultValue = null, defaultValueNote = null;
+                boolean secret = false;
                 // gather enums
                 Set<String> enums = new LinkedHashSet<>();
-
-                boolean isEnum;
-                if (metadata != null && !Strings.isNullOrEmpty(metadata.enums())) {
-                    isEnum = true;
-                    String[] values = metadata.enums().split(",");
-                    for (String val : values) {
-                        enums.add(val);
+                boolean isEnum = false;
+                for(Metadata metadata : metadataArray) {
+                    
+                    required = metadata.required();
+                    
+                    if (metadata.label() != null) {
+                        label = metadata.label();
                     }
-                } else {
-                    isEnum = fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
-                    if (isEnum) {
-                        TypeElement enumClass = findTypeElement(processingEnv, roundEnv, fieldTypeElement.asType().toString());
-                        if (enumClass != null) {
-                            // find all the enum constants which has the possible enum value that can be used
-                            List<VariableElement> fields = ElementFilter.fieldsIn(enumClass.getEnclosedElements());
-                            for (VariableElement var : fields) {
-                                if (var.getKind() == ElementKind.ENUM_CONSTANT) {
-                                    String val = var.toString();
-                                    enums.add(val);
+                    secret = metadata.secret();
+                    if (metadata.displayName() != null) {
+                        displayName = metadata.displayName();
+                    }
+
+                    if (metadata.defaultValue() != null) {
+                        defaultValue = metadata.defaultValue();
+                    }
+
+                    if (metadata.description() != null && isNullOrEmpty(docComment)) {
+                        docComment = metadata.description();
+                    }
+                    if (isNullOrEmpty(docComment)) {
+                        // apt cannot grab javadoc from camel-core, only from annotations
+                        if ("setHeaderFilterStrategy".equals(methodName)) {
+                            docComment = HEADER_FILTER_STRATEGY_JAVADOC;
+                        } else {
+                            docComment = "";
+                        }
+                    }
+
+                    if (!Strings.isNullOrEmpty(metadata.enums())) {
+                        isEnum = true;
+                        String[] values = metadata.enums().split(",");
+                        for (String val : values) {
+                            enums.add(val);
+                        }
+                    } else {
+                        isEnum = fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
+                        if (isEnum) {
+                            TypeElement enumClass = findTypeElement(processingEnv, roundEnv, fieldTypeElement.asType().toString());
+                            if (enumClass != null) {
+                                // find all the enum constants which has the possible enum value that can be used
+                                List<VariableElement> fields = ElementFilter.fieldsIn(enumClass.getEnclosedElements());
+                                for (VariableElement var : fields) {
+                                    if (var.getKind() == ElementKind.ENUM_CONSTANT) {
+                                        String val = var.toString();
+                                        enums.add(val);
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                // the field type may be overloaded by another type
-                if (metadata != null && !Strings.isNullOrEmpty(metadata.javaType())) {
-                    fieldTypeName = metadata.javaType();
+                    // the field type may be overloaded by another type
+                    if (!Strings.isNullOrEmpty(metadata.javaType())) {
+                        fieldTypeName = metadata.javaType();
+                    }
                 }
+                
 
                 String group = EndpointHelper.labelAsGroupName(label, componentModel.isConsumerOnly(), componentModel.isProducerOnly());
                 ComponentOption option = new ComponentOption(name, displayName, fieldTypeName, required, defaultValue, defaultValueNote,
@@ -618,19 +647,44 @@ public class EndpointAnnotationProcessor extends AbstractCamelAnnotationProcesso
         while (true) {
             List<VariableElement> fieldElements = ElementFilter.fieldsIn(classElement.getEnclosedElements());
             for (VariableElement fieldElement : fieldElements) {
-
-                Metadata metadata = fieldElement.getAnnotation(Metadata.class);
-                boolean deprecated = fieldElement.getAnnotation(Deprecated.class) != null;
-                String deprecationNote = null;
-                if (metadata != null) {
-                    deprecationNote = metadata.deprecationNote();
-                }
-                Boolean secret = metadata != null ? metadata.secret() : null;
-
                 UriPath path = fieldElement.getAnnotation(UriPath.class);
+                Boolean secret = Boolean.FALSE;
+                Metadata[] metadataArray = fieldElement.getAnnotationsByType(Metadata.class);
+                boolean required = false;
+                String deprecationNote = null, label = (path != null ?  path.label() : null);
+                String defaultValue = (path != null ?  path.defaultValue() : null);
+                String displayName = (path != null ?  path.displayName() : null);
+                for(Metadata metadata : metadataArray) {
+                    if (metadata.deprecationNote() != null) {
+                        deprecationNote = metadata.deprecationNote();
+                    }
+                    secret = metadata.secret();
+                    
+                    required = metadata.required();
+                    
+                    if (Strings.isNullOrEmpty(defaultValue)) {
+                        if (metadata.defaultValue() != null) {
+                            defaultValue = metadata.defaultValue();
+                        }
+                    }
+
+                    if (Strings.isNullOrEmpty(label)) {
+                        if (metadata.label() != null) {
+                            label = metadata.label();
+                        }
+                    }
+                    if (Strings.isNullOrEmpty(displayName)) {
+                        if (metadata.displayName() != null) {
+                            displayName = metadata.displayName();
+                        }
+                    }
+                }
                 String fieldName = fieldElement.getSimpleName().toString();
+                String fieldTypeName = fieldElement.asType().toString();
+                boolean deprecated = fieldElement.getAnnotation(Deprecated.class) != null;
+
                 if (path != null) {
-                    String name = path.name();
+                	String name = path.name();
                     if (isNullOrEmpty(name)) {
                         name = fieldName;
                     }
@@ -640,33 +694,19 @@ public class EndpointAnnotationProcessor extends AbstractCamelAnnotationProcesso
                     if (excludeProperty(excludeProperties, name)) {
                         continue;
                     }
-
-                    String defaultValue = path.defaultValue();
-                    if (Strings.isNullOrEmpty(defaultValue) && metadata != null) {
-                        defaultValue = metadata.defaultValue();
-                    }
-                    boolean required = metadata != null && metadata.required();
-                    String label = path.label();
-                    if (Strings.isNullOrEmpty(label) && metadata != null) {
-                        label = metadata.label();
-                    }
-                    String displayName = path.displayName();
-                    if (Strings.isNullOrEmpty(displayName)) {
-                        displayName = metadata != null ? metadata.displayName() : null;
-                    }
-
-                    TypeMirror fieldType = fieldElement.asType();
-                    String fieldTypeName = fieldType.toString();
+                   
                     TypeElement fieldTypeElement = findTypeElement(processingEnv, roundEnv, fieldTypeName);
+                    // the field type may be overloaded by another type
+                    if (!Strings.isNullOrEmpty(path.javaType())) {
+                        fieldTypeName = path.javaType();
+                    }
 
                     String docComment = findJavaDoc(elementUtils, fieldElement, fieldName, name, classElement, false);
                     if (isNullOrEmpty(docComment)) {
                         docComment = path.description();
                     }
-
                     // gather enums
                     Set<String> enums = new LinkedHashSet<>();
-
                     boolean isEnum;
                     if (!Strings.isNullOrEmpty(path.enums())) {
                         isEnum = true;
@@ -689,15 +729,11 @@ public class EndpointAnnotationProcessor extends AbstractCamelAnnotationProcesso
                                 }
                             }
                         }
-                    }
+                    }                    
 
-                    // the field type may be overloaded by another type
-                    if (!Strings.isNullOrEmpty(path.javaType())) {
-                        fieldTypeName = path.javaType();
-                    }
+                    boolean isSecret = secret != null ? secret : false;
 
                     String group = EndpointHelper.labelAsGroupName(label, componentModel.isConsumerOnly(), componentModel.isProducerOnly());
-                    boolean isSecret = secret != null ? secret : false;
                     EndpointPath ep = new EndpointPath(name, displayName, fieldTypeName, required, defaultValue, docComment, deprecated, deprecationNote,
                         isSecret, group, label, isEnum, enums);
                     endpointPaths.add(ep);
@@ -705,6 +741,30 @@ public class EndpointAnnotationProcessor extends AbstractCamelAnnotationProcesso
 
                 UriParam param = fieldElement.getAnnotation(UriParam.class);
                 fieldName = fieldElement.getSimpleName().toString();
+                String defaultValueNote = ( param != null ? param.defaultValueNote() : null);
+                label = (param != null ?  param.label() : null);
+                defaultValue = (param != null ?  param.defaultValue() : null);
+                displayName = (param != null ?  param.displayName() : null);
+                Metadata[] metadataParamArray = fieldElement.getAnnotationsByType(Metadata.class);
+                for(Metadata metadata : metadataParamArray) {
+                    required = metadata.required();
+                        
+                    if (Strings.isNullOrEmpty(defaultValue)) {
+                        if (metadata.defaultValue() != null) {
+                            defaultValue = metadata.defaultValue();
+                        }
+                    }
+                    if (Strings.isNullOrEmpty(label)) {
+                        if (metadata.label() != null) {
+                            label = metadata.label();
+                        }
+                    }
+                    if (Strings.isNullOrEmpty(displayName)) {
+                        if (metadata.displayName() != null) {
+                            displayName = metadata.displayName();
+                        }
+                    }
+                }
                 if (param != null) {
                     String name = param.name();
                     if (isNullOrEmpty(name)) {
@@ -720,24 +780,9 @@ public class EndpointAnnotationProcessor extends AbstractCamelAnnotationProcesso
                     String paramOptionalPrefix = param.optionalPrefix();
                     String paramPrefix = param.prefix();
                     boolean multiValue = param.multiValue();
-                    String defaultValue = param.defaultValue();
-                    if (defaultValue == null && metadata != null) {
-                        defaultValue = metadata.defaultValue();
-                    }
-                    String defaultValueNote = param.defaultValueNote();
-                    boolean required = metadata != null && metadata.required();
-                    String label = param.label();
-                    if (Strings.isNullOrEmpty(label) && metadata != null) {
-                        label = metadata.label();
-                    }
-                    String displayName = param.displayName();
-                    if (Strings.isNullOrEmpty(displayName)) {
-                        displayName = metadata != null ? metadata.displayName() : null;
-                    }
 
                     // if the field type is a nested parameter then iterate through its fields
-                    TypeMirror fieldType = fieldElement.asType();
-                    String fieldTypeName = fieldType.toString();
+                    fieldTypeName = fieldElement.asType().toString();
                     TypeElement fieldTypeElement = findTypeElement(processingEnv, roundEnv, fieldTypeName);
                     UriParams fieldParams = null;
                     if (fieldTypeElement != null) {

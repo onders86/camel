@@ -206,8 +206,8 @@ public class CoreEipAnnotationProcessorHelper {
         boolean deprecated = classElement.getAnnotation(Deprecated.class) != null;
         model.setDeprecated(deprecated);
 
-        Metadata metadata = classElement.getAnnotation(Metadata.class);
-        if (metadata != null) {
+        Metadata[] metadataArray = classElement.getAnnotationsByType(Metadata.class);
+        for (Metadata metadata : metadataArray) {
             if (!Strings.isNullOrEmpty(metadata.label())) {
                 model.setLabel(metadata.label());
             }
@@ -339,55 +339,56 @@ public class CoreEipAnnotationProcessorHelper {
             }
         }
 
-        Metadata metadata = fieldElement.getAnnotation(Metadata.class);
-
         name = prefix + name;
         TypeMirror fieldType = fieldElement.asType();
         String fieldTypeName = fieldType.toString();
         TypeElement fieldTypeElement = findTypeElement(processingEnv, roundEnv, fieldTypeName);
-
+        
         String defaultValue = findDefaultValue(fieldElement, fieldTypeName);
         String docComment = findJavaDoc(elementUtils, fieldElement, fieldName, name, classElement, true);
         boolean required = attribute.required();
         // metadata may overrule element required
         required = findRequired(fieldElement, required);
-
+        
+        String displayName = null;
+        String deprecationNote = null;
         // gather enums
         Set<String> enums = new TreeSet<>();
-        boolean isEnum;
-        if (metadata != null && !Strings.isNullOrEmpty(metadata.enums())) {
-            isEnum = true;
-            String[] values = metadata.enums().split(",");
-            for (String val : values) {
-                enums.add(val);
-            }
-        } else {
-            isEnum = fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
-            if (isEnum) {
-                TypeElement enumClass = findTypeElement(processingEnv, roundEnv, fieldTypeElement.asType().toString());
-                if (enumClass != null) {
-                    // find all the enum constants which has the possible enum
-                    // value that can be used
-                    List<VariableElement> fields = ElementFilter.fieldsIn(enumClass.getEnclosedElements());
-                    for (VariableElement var : fields) {
-                        if (var.getKind() == ElementKind.ENUM_CONSTANT) {
-                            String val = var.toString();
-                            enums.add(val);
+        boolean isEnum = false;
+        Metadata[] metadataArray = fieldElement.getAnnotationsByType(Metadata.class);
+        for (Metadata metadata : metadataArray) {
+            
+            if (!Strings.isNullOrEmpty(metadata.enums())) {
+                isEnum = true;
+                String[] values = metadata.enums().split(",");
+                for (String val : values) {
+                    enums.add(val);
+                }
+            } else {
+                isEnum = fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
+                if (isEnum) {
+                    TypeElement enumClass = findTypeElement(processingEnv, roundEnv, fieldTypeElement.asType().toString());
+                    if (enumClass != null) {
+                        // find all the enum constants which has the possible enum value that can be used
+                        List<VariableElement> fields = ElementFilter.fieldsIn(enumClass.getEnclosedElements());
+                        for (VariableElement var : fields) {
+                            if (var.getKind() == ElementKind.ENUM_CONSTANT) {
+                                String val = var.toString();
+                                enums.add(val);
+                            }
                         }
                     }
                 }
             }
+            if (metadata.displayName() != null) {
+                displayName = metadata.displayName();
+            }
+            if (metadata.deprecationNote() != null) {
+                deprecationNote = metadata.deprecationNote();
+            }
         }
-
-        String displayName = null;
-        if (metadata != null) {
-            displayName = metadata.displayName();
-        }
+        
         boolean deprecated = fieldElement.getAnnotation(Deprecated.class) != null;
-        String deprecationNote = null;
-        if (metadata != null) {
-            deprecationNote = metadata.deprecationNote();
-        }
 
         EipOption ep = new EipOption(name, displayName, "attribute", fieldTypeName, required, defaultValue, docComment, deprecated, deprecationNote, isEnum, enums, false, null,
                                      false);
@@ -422,15 +423,18 @@ public class CoreEipAnnotationProcessorHelper {
         required = findRequired(fieldElement, required);
 
         String displayName = null;
-        Metadata metadata = fieldElement.getAnnotation(Metadata.class);
-        if (metadata != null) {
-            displayName = metadata.displayName();
-        }
-        boolean deprecated = fieldElement.getAnnotation(Deprecated.class) != null;
         String deprecationNote = null;
-        if (metadata != null) {
-            deprecationNote = metadata.deprecationNote();
+        Metadata[] metadataArray = fieldElement.getAnnotationsByType(Metadata.class);
+        for (Metadata metadata : metadataArray) {
+            if (metadata.displayName() != null) {
+                displayName = metadata.displayName();
+            }
+            if (metadata.deprecationNote() != null) {
+                deprecationNote = metadata.deprecationNote();
+            }
         }
+
+        boolean deprecated = fieldElement.getAnnotation(Deprecated.class) != null;  
 
         EipOption ep = new EipOption(name, displayName, "value", fieldTypeName, required, defaultValue, docComment, deprecated, deprecationNote, false, null, false, null, false);
         eipOptions.add(ep);
@@ -443,8 +447,6 @@ public class CoreEipAnnotationProcessorHelper {
         String fieldName;
         fieldName = fieldElement.getSimpleName().toString();
         if (element != null) {
-
-            Metadata metadata = fieldElement.getAnnotation(Metadata.class);
 
             String kind = "element";
             String name = element.name();
@@ -468,28 +470,38 @@ public class CoreEipAnnotationProcessorHelper {
             if (!asPredicate) {
                 asPredicate = classElement.getAnnotation(AsPredicate.class) != null;
             }
-
-            // gather enums
+            
+            String displayName = null;
+            String deprecationNote = null;
+            boolean isEnum = false;
             Set<String> enums = new TreeSet<>();
-            boolean isEnum;
-            if (metadata != null && !Strings.isNullOrEmpty(metadata.enums())) {
-                isEnum = true;
-                String[] values = metadata.enums().split(",");
-                for (String val : values) {
-                    enums.add(val);
+            Metadata[] metadataArray = fieldElement.getAnnotationsByType(Metadata.class);
+            for (Metadata metadata : metadataArray) {
+                if (metadata.displayName() != null) {
+                    displayName = metadata.displayName();
                 }
-            } else {
-                isEnum = fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
-                if (isEnum) {
-                    TypeElement enumClass = findTypeElement(processingEnv, roundEnv, fieldTypeElement.asType().toString());
-                    if (enumClass != null) {
-                        // find all the enum constants which has the possible
-                        // enum value that can be used
-                        List<VariableElement> fields = ElementFilter.fieldsIn(enumClass.getEnclosedElements());
-                        for (VariableElement var : fields) {
-                            if (var.getKind() == ElementKind.ENUM_CONSTANT) {
-                                String val = var.toString();
-                                enums.add(val);
+                if (metadata.deprecationNote() != null) {
+                    deprecationNote = metadata.deprecationNote();
+                }
+                // gather enums
+                if (metadata != null && !Strings.isNullOrEmpty(metadata.enums())) {
+                    isEnum = true;
+                    String[] values = metadata.enums().split(",");
+                    for (String val : values) {
+                        enums.add(val);
+                    }
+                } else {
+                    isEnum = fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
+                    if (isEnum) {
+                        TypeElement enumClass = findTypeElement(processingEnv, roundEnv, fieldTypeElement.asType().toString());
+                        if (enumClass != null) {
+                            // find all the enum constants which has the possible enum value that can be used
+                            List<VariableElement> fields = ElementFilter.fieldsIn(enumClass.getEnclosedElements());
+                            for (VariableElement var : fields) {
+                                if (var.getKind() == ElementKind.ENUM_CONSTANT) {
+                                    String val = var.toString();
+                                    enums.add(val);
+                                }
                             }
                         }
                     }
@@ -527,15 +539,7 @@ public class CoreEipAnnotationProcessorHelper {
                 oneOfTypes.add("otherwise");
             }
 
-            String displayName = null;
-            if (metadata != null) {
-                displayName = metadata.displayName();
-            }
             boolean deprecated = fieldElement.getAnnotation(Deprecated.class) != null;
-            String deprecationNote = null;
-            if (metadata != null) {
-                deprecationNote = metadata.deprecationNote();
-            }
 
             EipOption ep = new EipOption(name, displayName, kind, fieldTypeName, required, defaultValue, docComment, deprecated, deprecationNote, isEnum, enums, isOneOf,
                                          oneOfTypes, asPredicate);
@@ -569,20 +573,24 @@ public class CoreEipAnnotationProcessorHelper {
                 String child = element.name();
                 oneOfTypes.add(child);
             }
-
+            
             String displayName = null;
-            Metadata metadata = fieldElement.getAnnotation(Metadata.class);
-            if (metadata != null) {
-                displayName = metadata.displayName();
-            }
-            boolean deprecated = fieldElement.getAnnotation(Deprecated.class) != null;
             String deprecationNote = null;
-            if (metadata != null) {
-                deprecationNote = metadata.deprecationNote();
+
+            Metadata[] metadataArray = fieldElement.getAnnotationsByType(Metadata.class);
+            for (Metadata metadata : metadataArray) {
+                if (metadata.displayName() != null) {
+                    displayName = metadata.displayName();
+                }
+                if (metadata.deprecationNote() != null) {
+                    deprecationNote = metadata.deprecationNote();
+                }
             }
 
-            EipOption ep = new EipOption(name, displayName, kind, fieldTypeName, required, defaultValue, docComment, deprecated, deprecationNote, false, null, true, oneOfTypes,
-                                         false);
+            boolean deprecated = fieldElement.getAnnotation(Deprecated.class) != null;
+
+            EipOption ep = new EipOption(name, displayName, kind, fieldTypeName, required, defaultValue, docComment, deprecated, deprecationNote, false, null, true, oneOfTypes, false);
+
             eipOptions.add(ep);
         }
     }
@@ -794,16 +802,21 @@ public class CoreEipAnnotationProcessorHelper {
 
             // remove some types which are not intended as an output in eips
             oneOfTypes.remove("route");
+
             String displayName = null;
-            Metadata metadata = fieldElement.getAnnotation(Metadata.class);
-            if (metadata != null) {
-                displayName = metadata.displayName();
-            }
-            boolean deprecated = fieldElement.getAnnotation(Deprecated.class) != null;
             String deprecationNote = null;
-            if (metadata != null) {
-                deprecationNote = metadata.deprecationNote();
+
+            Metadata[] metadataArray = fieldElement.getAnnotationsByType(Metadata.class);
+            for (Metadata metadata : metadataArray) {
+                if (metadata.displayName() != null) {
+                    displayName = metadata.displayName();
+                }
+                if (metadata.deprecationNote() != null) {
+                    deprecationNote = metadata.deprecationNote();
+                }
             }
+            
+            boolean deprecated = fieldElement.getAnnotation(Deprecated.class) != null;
 
             EipOption ep = new EipOption(name, displayName, kind, fieldTypeName, true, "", "", deprecated, deprecationNote, false, null, true, oneOfTypes, false);
             eipOptions.add(ep);
@@ -846,16 +859,20 @@ public class CoreEipAnnotationProcessorHelper {
                     }
                 }
             }
+            
             String displayName = null;
-            Metadata metadata = fieldElement.getAnnotation(Metadata.class);
-            if (metadata != null) {
-                displayName = metadata.displayName();
-            }
-            boolean deprecated = fieldElement.getAnnotation(Deprecated.class) != null;
             String deprecationNote = null;
-            if (metadata != null) {
-                deprecationNote = metadata.deprecationNote();
+            Metadata[] metadataArray = fieldElement.getAnnotationsByType(Metadata.class);
+            for (Metadata metadata : metadataArray) {
+                if (metadata.displayName() != null) {
+                    displayName = metadata.displayName();
+                }
+                if (metadata.deprecationNote() != null) {
+                    deprecationNote = metadata.deprecationNote();
+                }
             }
+            
+            boolean deprecated = fieldElement.getAnnotation(Deprecated.class) != null;
 
             EipOption ep = new EipOption(name, displayName, kind, fieldTypeName, true, "", docComment, deprecated, deprecationNote, false, null, true, oneOfTypes, false);
             eipOptions.add(ep);
@@ -910,17 +927,20 @@ public class CoreEipAnnotationProcessorHelper {
                     }
                 }
             }
-
+            
             String displayName = null;
-            Metadata metadata = fieldElement.getAnnotation(Metadata.class);
-            if (metadata != null) {
-                displayName = metadata.displayName();
-            }
-            boolean deprecated = fieldElement.getAnnotation(Deprecated.class) != null;
             String deprecationNote = null;
-            if (metadata != null) {
-                deprecationNote = metadata.deprecationNote();
+            Metadata[] metadataArray = fieldElement.getAnnotationsByType(Metadata.class);
+            for (Metadata metadata : metadataArray) {
+                if (metadata.displayName() != null) {
+                    displayName = metadata.displayName();
+                }
+                if (metadata.deprecationNote() != null) {
+                    deprecationNote = metadata.deprecationNote();
+                }
             }
+
+            boolean deprecated = fieldElement.getAnnotation(Deprecated.class) != null;
 
             EipOption ep = new EipOption(name, displayName, kind, fieldTypeName, true, "", docComment, deprecated, deprecationNote, false, null, true, oneOfTypes, asPredicate);
             eipOptions.add(ep);
@@ -957,15 +977,18 @@ public class CoreEipAnnotationProcessorHelper {
             boolean asPredicate = true;
 
             String displayName = null;
-            Metadata metadata = fieldElement.getAnnotation(Metadata.class);
-            if (metadata != null) {
-                displayName = metadata.displayName();
-            }
-            boolean deprecated = fieldElement.getAnnotation(Deprecated.class) != null;
             String deprecationNote = null;
-            if (metadata != null) {
-                deprecationNote = metadata.deprecationNote();
+            Metadata[] metadataArray = fieldElement.getAnnotationsByType(Metadata.class);
+            for (Metadata metadata : metadataArray) {
+                if (metadata.displayName() != null) {
+                    displayName = metadata.displayName();
+                }
+                if (metadata.deprecationNote() != null) {
+                    deprecationNote = metadata.deprecationNote();
+                }
             }
+            
+            boolean deprecated = fieldElement.getAnnotation(Deprecated.class) != null;
 
             EipOption ep = new EipOption(name, displayName, kind, fieldTypeName, false, "", docComment, deprecated, deprecationNote, false, null, true, oneOfTypes, asPredicate);
             eipOptions.add(ep);
@@ -985,12 +1008,13 @@ public class CoreEipAnnotationProcessorHelper {
 
     private String findDefaultValue(VariableElement fieldElement, String fieldTypeName) {
         String defaultValue = null;
-        Metadata metadata = fieldElement.getAnnotation(Metadata.class);
-        if (metadata != null) {
+        Metadata[] metadataArray = fieldElement.getAnnotationsByType(Metadata.class);
+        for (Metadata metadata : metadataArray) {
             if (!Strings.isNullOrEmpty(metadata.defaultValue())) {
                 defaultValue = metadata.defaultValue();
             }
         }
+
         if (defaultValue == null) {
             // if its a boolean type, then we use false as the default
             if ("boolean".equals(fieldTypeName) || "java.lang.Boolean".equals(fieldTypeName)) {
@@ -1002,8 +1026,8 @@ public class CoreEipAnnotationProcessorHelper {
     }
 
     private boolean findRequired(VariableElement fieldElement, boolean defaultValue) {
-        Metadata metadata = fieldElement.getAnnotation(Metadata.class);
-        if (metadata != null) {
+        Metadata[] metadataArray = fieldElement.getAnnotationsByType(Metadata.class);
+        for (Metadata metadata : metadataArray) {
             return metadata.required();
         }
         return defaultValue;
