@@ -16,4 +16,4 @@
 *** Test Cases ***
 Set Variable Camel Body Test Case
      ${myvar} =    Set Variable    ${body}
-     Log    ${myvar}    console=yes
+     Should Be True    ${myvar} == ${body}
